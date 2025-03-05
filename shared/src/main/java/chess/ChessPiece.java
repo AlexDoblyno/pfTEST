@@ -1,6 +1,6 @@
 package chess;
 
-import chess.movecalculators.*;
+import chess.moves.*;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -12,29 +12,43 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessPiece {
-    private final ChessPiece.PieceType type;
-    private final ChessGame.TeamColor pieceColor;
 
-    public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
-        this.type = type;
+    private final ChessGame.TeamColor pieceColor;
+    private PieceType pieceType;
+    private boolean subjectToEnPassant;
+    private boolean moved;
+
+    public ChessPiece(ChessGame.TeamColor pieceColor, PieceType type) {
         this.pieceColor = pieceColor;
+        this.pieceType = type;
+        this.subjectToEnPassant = false;
+        this.moved = false;
+    }
+
+    /**
+     * Constructs new ChessPiece as copy of original
+     *
+     * @param original Piece to copy
+     */
+    public ChessPiece(ChessPiece original) {
+        this.pieceColor = original.pieceColor;
+        this.pieceType = original.pieceType;
+        this.subjectToEnPassant = original.subjectToEnPassant;
+        this.moved = original.moved;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
         ChessPiece that = (ChessPiece) o;
-        return type == that.type && pieceColor == that.pieceColor;
+        return pieceColor == that.pieceColor && pieceType == that.pieceType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, pieceColor);
+        return Objects.hash(pieceColor, pieceType);
     }
 
     /**
@@ -60,7 +74,46 @@ public class ChessPiece {
      * @return which type of chess piece this piece is
      */
     public PieceType getPieceType() {
-        return type;
+        return pieceType;
+    }
+
+    /**
+     * Sets pieceType
+     *
+     * @param type Type to set to
+     */
+    public void setPieceType(ChessPiece.PieceType type) {
+        pieceType = type;
+    }
+
+    /**
+     * Sets subjectToEnPassant to given value
+     *
+     * @param set Value to set subjectToEnPassant to
+     */
+    public void setSubjectToEnPassant(boolean set) {
+        subjectToEnPassant = set;
+    }
+
+    /**
+     * @return True if subjectToEnPassant is set
+     */
+    public boolean getSubjectToEnPassant() {
+        return subjectToEnPassant;
+    }
+
+    /**
+     * Sets moved to true
+     */
+    public void setMoved() {
+        moved = true;
+    }
+
+    /**
+     * @return True if moved is not set
+     */
+    public boolean getNotMoved() {
+        return !moved;
     }
 
     /**
@@ -71,14 +124,34 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        return switch (type) {
-            case KING -> new KingMoveCalculator().getMoves(board, myPosition);
-            case QUEEN -> new QueenMoveCalculator().getMoves(board, myPosition);
-            case KNIGHT -> new KnightMoveCalculator().getMoves(board, myPosition);
-            case BISHOP -> new BishopMoveCalculator().getMoves(board, myPosition);
-            case ROOK -> new RookMoveCalculator().getMoves(board, myPosition);
-            case PAWN -> new PawnMoveCalculator().getMoves(board, myPosition);
-            default -> null; // Return empty collection instead of null
-        };
+        Collection<ChessMove> validMoves;
+        switch (pieceType) {
+            case KING -> {
+                PieceMovesCalculator calculator = new KingCalculator();
+                validMoves = calculator.pieceMoves(board, myPosition);
+            }
+            case QUEEN -> {
+                PieceMovesCalculator calculator = new QueenCalculator();
+                validMoves = calculator.pieceMoves(board, myPosition);
+            }
+            case BISHOP -> {
+                PieceMovesCalculator calculator = new BishopCalculator();
+                validMoves = calculator.pieceMoves(board, myPosition);
+            }
+            case KNIGHT -> {
+                PieceMovesCalculator calculator = new KnightCalculator();
+                validMoves = calculator.pieceMoves(board, myPosition);
+            }
+            case ROOK -> {
+                PieceMovesCalculator calculator = new RookCalculator();
+                validMoves = calculator.pieceMoves(board, myPosition);
+            }
+            case PAWN -> {
+                PieceMovesCalculator calculator = new PawnCalculator();
+                validMoves = calculator.pieceMoves(board, myPosition);
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + pieceType);
+        }
+        return validMoves;
     }
 }
